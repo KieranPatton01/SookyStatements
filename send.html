@@ -6,6 +6,7 @@
   <title>Send a Message</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: #faf5ef;
       font-family: 'Cormorant Garamond', serif;
@@ -14,28 +15,36 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      margin: 0;
       padding: 24px;
-      box-sizing: border-box;
     }
-    h1 { color: #6b2d4a; font-size: 1.8rem; margin-bottom: 24px; }
-    textarea {
+    .card {
+      background: #fff;
+      border: 1px solid #f2c4ce;
+      border-radius: 24px;
+      padding: 32px 28px;
       width: 100%;
       max-width: 400px;
-      height: 140px;
-      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 4px 24px rgba(155,77,106,.08);
+    }
+    h1 { color: #6b2d4a; font-size: 1.8rem; text-align: center; }
+    input, textarea {
+      width: 100%;
+      padding: 14px 16px;
       border: 1.5px solid #f2c4ce;
-      border-radius: 16px;
+      border-radius: 14px;
       font-family: 'Cormorant Garamond', serif;
       font-size: 1.1rem;
       color: #3d1f2d;
-      background: #fff;
-      resize: none;
+      background: #faf5ef;
       outline: none;
     }
+    textarea { height: 140px; resize: none; }
+    input[type="password"] { letter-spacing: .3em; }
     button {
-      margin-top: 16px;
-      padding: 14px 40px;
+      padding: 14px;
       background: linear-gradient(135deg, #d4879a, #9b4d6a);
       color: #fff;
       border: none;
@@ -44,58 +53,112 @@
       font-size: 1.2rem;
       font-style: italic;
       cursor: pointer;
+      transition: opacity .2s;
     }
-    #status {
-      margin-top: 16px;
-      font-size: 1rem;
-      color: #9b4d6a;
-      min-height: 24px;
-    }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    #status { text-align: center; font-size: 1rem; color: #9b4d6a; min-height: 24px; }
+    .hidden { display: none !important; }
+    .error { color: #ef4444; text-align: center; font-size: .9rem; }
   </style>
 </head>
 <body>
-  <h1>🌸 Send a Message</h1>
-  <textarea id="msg" placeholder="Write something lovely…"></textarea>
-  <button onclick="send()">Send 💌</button>
-  <p id="status"></p>
+
+  <!-- PIN screen -->
+  <div class="card" id="pin-screen">
+    <h1>🔐 Enter PIN</h1>
+    <input type="password" id="pin-input" placeholder="PIN"
+      onkeydown="if(event.key==='Enter') unlock()" />
+    <button onclick="unlock()">Unlock 🌸</button>
+    <p class="error" id="pin-error"></p>
+  </div>
+
+  <!-- Send screen -->
+  <div class="card hidden" id="send-screen">
+    <h1>🌸 Send a Message</h1>
+    <textarea id="msg" placeholder="Write something lovely…"></textarea>
+    <button id="send-btn" onclick="send()">Send 💌</button>
+    <p id="status"></p>
+  </div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getDatabase, ref, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
     import { CONFIG } from './js/config.js';
 
+    const FUNCTION_URL = 'https://europe-west1-sookystatements.cloudfunctions.net/sendMessage';
+
     const app = initializeApp(CONFIG.firebase);
     const db  = getDatabase(app);
 
-    const FUNCTION_URL = 'https://europe-west1-sookystatements.cloudfunctions.net/sendMessage';
+    // PIN is never stored in this file — it's sent to the server which validates it
+    let enteredPin = '';
 
-    window.send = async function() {
-      const text = document.getElementById('msg').value.trim();
-      const status = document.getElementById('status');
-      if (!text) return;
+    // Restore session if already unlocked
+    if (sessionStorage.getItem('unlocked') === 'yes') {
+      enteredPin = sessionStorage.getItem('pin') ?? '';
+      document.getElementById('pin-screen').classList.add('hidden');
+      document.getElementById('send-screen').classList.remove('hidden');
+    }
 
-      status.textContent = 'Sending…';
+    window.unlock = async function() {
+      const pin    = document.getElementById('pin-input').value;
+      const errEl  = document.getElementById('pin-error');
+      errEl.textContent = 'Checking…';
 
-      // Save to DB
-      await push(ref(db, 'messages'), text);
-
-      // Trigger notification via Cloud Function
+      // Validate PIN against the server by sending a test request
       try {
         const res = await fetch(FUNCTION_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ pin, checkOnly: true }),
         });
-        if (res.ok) {
-          status.textContent = 'Sent! 🌸';
-          document.getElementById('msg').value = '';
-        } else {
-          status.textContent = 'Message saved but notification failed';
+
+        if (res.status === 401) {
+          errEl.textContent = 'Wrong PIN';
+          document.getElementById('pin-input').value = '';
+          return;
         }
+
+        // PIN accepted
+        enteredPin = pin;
+        sessionStorage.setItem('unlocked', 'yes');
+        sessionStorage.setItem('pin', pin);
+        document.getElementById('pin-screen').classList.add('hidden');
+        document.getElementById('send-screen').classList.remove('hidden');
+        errEl.textContent = '';
       } catch (e) {
-        status.textContent = 'Message saved but notification failed';
+        errEl.textContent = 'Could not connect';
+      }
+    };
+
+    window.send = async function() {
+      const text   = document.getElementById('msg').value.trim();
+      const status = document.getElementById('status');
+      const btn    = document.getElementById('send-btn');
+      if (!text) return;
+
+      btn.disabled = true;
+      status.textContent = 'Sending…';
+
+      try {
+        // Save to DB so she sees it in the app
+        await push(ref(db, 'messages'), text);
+
+        // Call function — PIN validated server side
+        const res = await fetch(FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, pin: enteredPin }),
+        });
+
+        status.textContent = res.ok ? 'Sent! 🌸' : 'Saved but notification failed';
+        document.getElementById('msg').value = '';
+      } catch (e) {
+        status.textContent = 'Something went wrong';
         console.error(e);
       }
+
+      btn.disabled = false;
     };
   </script>
 </body>
