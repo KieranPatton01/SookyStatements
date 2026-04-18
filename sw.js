@@ -62,7 +62,8 @@ const fetchPromise = fetch(event.request)
   .then(res => {
     if (res.ok) {
       const copy = res.clone();
-      caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
+      const copy = res.clone();
+caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
     }
     return res;
   })
