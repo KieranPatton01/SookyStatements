@@ -80,25 +80,22 @@
     <p id="status"></p>
   </div>
 
-  <script type="module">
+  <script>
     const FUNCTION_URL = 'https://europe-west1-sookystatements.cloudfunctions.net/sendMessage';
-
-    // PIN is never stored in this file — it's sent to the server which validates it
     let enteredPin = '';
 
-    // Restore session if already unlocked
+    // Restore session
     if (sessionStorage.getItem('unlocked') === 'yes') {
-      enteredPin = sessionStorage.getItem('pin') ?? '';
+      enteredPin = sessionStorage.getItem('pin') || '';
       document.getElementById('pin-screen').classList.add('hidden');
       document.getElementById('send-screen').classList.remove('hidden');
     }
 
-    window.unlock = async function() {
-      const pin    = document.getElementById('pin-input').value;
-      const errEl  = document.getElementById('pin-error');
+    async function unlock() {
+      const pin   = document.getElementById('pin-input').value;
+      const errEl = document.getElementById('pin-error');
       errEl.textContent = 'Checking…';
 
-      // Validate PIN against the server by sending a test request
       try {
         const res = await fetch(FUNCTION_URL, {
           method: 'POST',
@@ -112,7 +109,6 @@
           return;
         }
 
-        // PIN accepted
         enteredPin = pin;
         sessionStorage.setItem('unlocked', 'yes');
         sessionStorage.setItem('pin', pin);
@@ -122,9 +118,9 @@
       } catch (e) {
         errEl.textContent = 'Could not connect';
       }
-    };
+    }
 
-    window.send = async function() {
+    async function send() {
       const text   = document.getElementById('msg').value.trim();
       const status = document.getElementById('status');
       const btn    = document.getElementById('send-btn');
@@ -134,22 +130,21 @@
       status.textContent = 'Sending…';
 
       try {
-        // Call function — saves to DB and sends notification
         const res = await fetch(FUNCTION_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text, pin: enteredPin }),
         });
 
-        status.textContent = res.ok ? 'Sent! 🌸' : 'Saved but notification failed';
-        document.getElementById('msg').value = '';
+        status.textContent = res.ok ? 'Sent! 🌸' : 'Something went wrong';
+        if (res.ok) document.getElementById('msg').value = '';
       } catch (e) {
         status.textContent = 'Something went wrong';
         console.error(e);
       }
 
       btn.disabled = false;
-    };
+    }
   </script>
 </body>
 </html>
