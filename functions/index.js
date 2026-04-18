@@ -1,6 +1,5 @@
 // ============================================================
 //  SOOKY STATEMENTS — functions/index.js
-//  PIN lives here only — never in any public file
 // ============================================================
 
 const { onRequest }     = require('firebase-functions/v2/https');
@@ -12,8 +11,8 @@ initializeApp();
 const rtdb      = getDatabase();
 const messaging = getMessaging();
 
-const SOOKY_URL = 'https://kieranpatton01.github.io/SookyStatements';
-const SECRET_PIN = 'richard'; // !! Only place the PIN exists !!
+const SOOKY_URL  = 'https://kieranpatton01.github.io/SookyStatements';
+const SECRET_PIN = 'CHANGE_ME'; // !! Only place the PIN exists !!
 
 exports.sendMessage = onRequest(
   { region: 'europe-west1', cors: true },
@@ -31,7 +30,7 @@ exports.sendMessage = onRequest(
       return;
     }
 
-    // PIN check only — used by the unlock screen
+    // PIN check only
     if (checkOnly) {
       res.status(200).send('OK');
       return;
@@ -42,14 +41,17 @@ exports.sendMessage = onRequest(
       return;
     }
 
-    console.log('[Sooky] Sending notification for:', text.slice(0, 40));
+    // Save message to DB (function has admin access, bypasses rules)
+    await rtdb.ref('messages').push(text);
+    console.log('[Sooky] Message saved to DB');
 
+    // Get FCM token
     const tokenSnap = await rtdb.ref('recipient/fcmToken').get();
     const fcmToken  = tokenSnap.val();
 
     if (!fcmToken) {
       console.warn('[Sooky] No FCM token found');
-      res.status(404).send('No recipient token');
+      res.status(200).send('Saved but no token');
       return;
     }
 

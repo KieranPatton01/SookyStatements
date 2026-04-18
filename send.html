@@ -81,14 +81,7 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getDatabase, ref, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-    import { CONFIG } from './js/config.js';
-
     const FUNCTION_URL = 'https://europe-west1-sookystatements.cloudfunctions.net/sendMessage';
-
-    const app = initializeApp(CONFIG.firebase);
-    const db  = getDatabase(app);
 
     // PIN is never stored in this file — it's sent to the server which validates it
     let enteredPin = '';
@@ -141,10 +134,7 @@
       status.textContent = 'Sending…';
 
       try {
-        // Save to DB so she sees it in the app
-        await push(ref(db, 'messages'), text);
-
-        // Call function — PIN validated server side
+        // Call function — saves to DB and sends notification
         const res = await fetch(FUNCTION_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
