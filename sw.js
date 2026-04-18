@@ -6,18 +6,18 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCD71Lc9VRoK8r0rEizSz-mjiu93c5g470",
-  authDomain: "sookystatements.firebaseapp.com",
-  projectId: "sookystatements",
-  storageBucket: "sookystatements.firebasestorage.app",
-  messagingSenderId: "890134490896",
-  appId: "1:890134490896:web:0e1bee609eee0a8ae47f95"
+  apiKey:            "AIzaSyCgp-uyjEwZYyWM3B7DTU-fT4bYqZkrkbw",
+  authDomain:        "crush-compass.firebaseapp.com",
+  projectId:         "crush-compass",
+  storageBucket:     "crush-compass.firebasestorage.app",
+  messagingSenderId: "585285811651",
+  appId:             "1:585285811651:web:1bea9529c3d7ad80559176",
 };
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-const CACHE_NAME = 'sooky-v2';
+const CACHE_NAME = 'sooky-v1';
 
 const STATIC_ASSETS = [
   '/SookyStatements/',
@@ -58,23 +58,24 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then(cached => {
-const fetchPromise = fetch(event.request)
-  .then(res => {
-    if (res.ok) {
-      const copy = res.clone();
-      const copy = res.clone();
-caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
-    }
-    return res;
-  })
-  .catch(() => cached);
-return cached || fetchPromise;
+      const fetchPromise = fetch(event.request)
+        .then(res => {
+          if (res.ok) caches.open(CACHE_NAME).then(c => c.put(event.request, res.clone()));
+          return res;
+        })
+        .catch(() => cached);
+      return cached || fetchPromise;
     })
   );
 });
 
 /* ── FCM background messages ─────────────────────────────── */
-messaging.onBackgroundMessage((payload) => {
+messaging.onBackgroundMessage(async (payload) => {
+  // Don't show if app is already open and focused
+  const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  const appOpen = clients.some(c => c.url.includes('/SookyStatements') && c.visibilityState === 'visible');
+  if (appOpen) return;
+
   const title = payload.notification?.title ?? '🌸 Sooky Statements';
   const body  = payload.notification?.body  ?? 'You have a new message';
 

@@ -32,9 +32,9 @@ async function boot() {
   db        = getDatabase(app);
   messaging = getMessaging(app);
 
-  onMessage(messaging, (payload) => {
-    showToast(payload.notification?.body ?? 'New message 💌');
-  });
+  // Suppress foreground notifications — system notification handles it
+  // The realtime DB listener updates the message list automatically
+  onMessage(messaging, () => {});
 
   const notifPerm = Notification.permission;
   if (notifPerm === 'granted') {
@@ -157,4 +157,4 @@ function showToast(message) {
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-allow').addEventListener('click', grantPermissions);
   boot().catch(console.error);
-});
+}); 

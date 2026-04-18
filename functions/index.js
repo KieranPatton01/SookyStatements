@@ -12,7 +12,7 @@ const rtdb      = getDatabase();
 const messaging = getMessaging();
 
 const SOOKY_URL  = 'https://kieranpatton01.github.io/SookyStatements';
-const SECRET_PIN = 'CHANGE_ME'; // !! Only place the PIN exists !!
+const SECRET_PIN = 'richard'; // !! Only place the PIN exists !!
 
 exports.sendMessage = onRequest(
   { region: 'europe-west1', cors: true },
