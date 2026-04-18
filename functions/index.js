@@ -18,7 +18,10 @@ const SOOKY_URL = 'https://kieranpatton01.github.io/SookyStatements';
 //  Trigger: new message added to Realtime Database
 // ============================================================
 exports.onNewMessage = onValueCreated(
-  { ref: 'messages/{messageId}', region: 'europe-west1' },
+  { ref: 'messages/{messageId}',
+    region: 'europe-west1',
+    instance: 'sookystatements-default-rtdb' 
+  },
   async (event) => {
     const message = event.data.val();
     if (!message?.text) return null;
