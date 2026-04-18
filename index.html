@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#faf5ef" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Sooky" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Sooky Statements</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Floating petals -->
+  <div class="petals" aria-hidden="true">
+    <span class="petal">🌸</span>
+    <span class="petal">🌷</span>
+    <span class="petal">🌸</span>
+    <span class="petal">✿</span>
+    <span class="petal">🌸</span>
+    <span class="petal">🌷</span>
+    <span class="petal">🌸</span>
+    <span class="petal">✿</span>
+    <span class="petal">🌸</span>
+    <span class="petal">🌷</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCREEN 1: Welcome / permission
+  ════════════════════════════════════════════════════════ -->
+  <div id="screen-welcome" class="screen active">
+    <div class="welcome-content">
+
+      <!-- Lily illustration -->
+      <div class="lily-hero">
+        <div class="lily-glow"></div>
+        <svg viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <!-- Stem -->
+          <path d="M60 140 Q58 110 60 80" stroke="#9b4d6a" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Leaf left -->
+          <path d="M60 110 Q40 100 35 85 Q50 90 60 105" fill="#c17a90" opacity=".5"/>
+          <!-- Leaf right -->
+          <path d="M60 100 Q80 88 86 73 Q70 80 60 98" fill="#c17a90" opacity=".5"/>
+          <!-- Petals -->
+          <ellipse cx="60" cy="52" rx="10" ry="28" fill="#f2c4ce" opacity=".9"
+            transform="rotate(-30 60 52)"/>
+          <ellipse cx="60" cy="52" rx="10" ry="28" fill="#eda8bc" opacity=".85"
+            transform="rotate(30 60 52)"/>
+          <ellipse cx="60" cy="52" rx="10" ry="28" fill="#f2c4ce" opacity=".9"
+            transform="rotate(90 60 52)"/>
+          <ellipse cx="60" cy="52" rx="10" ry="28" fill="#eda8bc" opacity=".85"
+            transform="rotate(150 60 52)"/>
+          <ellipse cx="60" cy="52" rx="10" ry="28" fill="#f2c4ce" opacity=".9"
+            transform="rotate(210 60 52)"/>
+          <ellipse cx="60" cy="52" rx="10" ry="28" fill="#eda8bc" opacity=".85"
+            transform="rotate(270 60 52)"/>
+          <!-- Centre -->
+          <circle cx="60" cy="52" r="10" fill="#c9a96e" opacity=".9"/>
+          <circle cx="60" cy="52" r="5"  fill="#e8d5b0"/>
+          <!-- Stamens -->
+          <circle cx="60" cy="40" r="2.5" fill="#9b4d6a" opacity=".8"/>
+          <circle cx="51" cy="45" r="2"   fill="#9b4d6a" opacity=".7"/>
+          <circle cx="69" cy="45" r="2"   fill="#9b4d6a" opacity=".7"/>
+        </svg>
+      </div>
+
+      <div>
+        <h1 class="app-title">Sooky Statements</h1>
+        <p class="app-subtitle">from him, with love</p>
+      </div>
+
+      <p class="welcome-text">
+        A little corner just for you —<br/>
+        where <strong>Kieran</strong> leaves you notes<br/>
+        whenever he's thinking of you 🌸
+      </p>
+
+      <div class="divider">allow notifications</div>
+
+      <button class="btn-allow" id="btn-allow">
+        Allow Notifications 🌸
+      </button>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       SCREEN 2: Message inbox
+  ════════════════════════════════════════════════════════ -->
+  <div id="screen-messages" class="screen">
+    <div class="messages-content">
+
+      <div class="messages-header">
+        <span class="header-lily">🌸</span>
+        <h2 class="header-title">Your Messages</h2>
+        <span class="header-count" id="message-count"></span>
+        <div class="header-rule"></div>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state">
+        <span class="empty-lily">🌷</span>
+        <p class="empty-text">Nothing yet…<br/>check back soon</p>
+      </div>
+
+      <!-- Message list -->
+      <div id="message-list"></div>
+
+    </div>
+  </div>
+
+
+  <!-- Toast container -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>

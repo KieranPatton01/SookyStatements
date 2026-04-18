@@ -1,0 +1,14 @@
+{
+  "rules": {
+    "messages": {
+      ".read": true,
+      ".write": false
+    },
+    "recipient": {
+      "fcmToken": {
+        ".read": false,
+        ".write": true
+      }
+    }
+  }
+}
