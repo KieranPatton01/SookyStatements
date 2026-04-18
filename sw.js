@@ -17,7 +17,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-const CACHE_NAME = 'sooky-v1';
+const CACHE_NAME = 'sooky-v2';
 
 const STATIC_ASSETS = [
   '/SookyStatements/',
@@ -58,13 +58,16 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then(cached => {
-      const fetchPromise = fetch(event.request)
-        .then(res => {
-          if (res.ok) caches.open(CACHE_NAME).then(c => c.put(event.request, res.clone()));
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
+const fetchPromise = fetch(event.request)
+  .then(res => {
+    if (res.ok) {
+      const copy = res.clone();
+      caches.open(CACHE_NAME).then(c => c.put(event.request, copy));
+    }
+    return res;
+  })
+  .catch(() => cached);
+return cached || fetchPromise;
     })
   );
 });

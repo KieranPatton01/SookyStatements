@@ -7,6 +7,7 @@ export const CONFIG = {
   firebase: {
     apiKey: "AIzaSyCD71Lc9VRoK8r0rEizSz-mjiu93c5g470",
     authDomain: "sookystatements.firebaseapp.com",
+    databaseURL: "https://sookystatements-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "sookystatements",
     storageBucket: "sookystatements.firebasestorage.app",
     messagingSenderId: "890134490896",
