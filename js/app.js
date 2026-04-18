@@ -5,7 +5,7 @@
 import { CONFIG } from './config.js';
 
 import { initializeApp }     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, onValue, query, orderByChild, limitToLast, serverTimestamp, set }
+import { getDatabase, ref, onValue, set }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getMessaging, getToken, onMessage }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
@@ -16,7 +16,6 @@ let swReg     = null;
 
 /* ── Boot ────────────────────────────────────────────────── */
 async function boot() {
-  // Register service worker
   if ('serviceWorker' in navigator) {
     try {
       swReg = await navigator.serviceWorker.register('/SookyStatements/sw.js', {
@@ -27,18 +26,14 @@ async function boot() {
     }
   }
 
-  // Init Firebase
   const app = initializeApp(CONFIG.firebase);
   db        = getDatabase(app);
   messaging = getMessaging(app);
 
-  // Handle foreground FCM messages
   onMessage(messaging, (payload) => {
     showToast(payload.notification?.body ?? 'New message 💌');
-    // Messages update via the realtime listener automatically
   });
 
-  // Check if permissions already granted
   const notifPerm = Notification.permission;
   if (notifPerm === 'granted') {
     await registerFcmToken();
@@ -49,7 +44,7 @@ async function boot() {
   }
 }
 
-/* ── FCM token registration ──────────────────────────────── */
+/* ── FCM token ───────────────────────────────────────────── */
 async function registerFcmToken() {
   try {
     const token = await getToken(messaging, {
@@ -57,7 +52,6 @@ async function registerFcmToken() {
       serviceWorkerRegistration: swReg,
     });
     if (token) {
-      // Store token under 'recipient' in Realtime DB
       await set(ref(db, 'recipient/fcmToken'), token);
       console.log('[FCM] Token saved');
     }
@@ -66,7 +60,7 @@ async function registerFcmToken() {
   }
 }
 
-/* ── Grant permissions flow ──────────────────────────────── */
+/* ── Grant permissions ───────────────────────────────────── */
 async function grantPermissions() {
   const btn = document.getElementById('btn-allow');
   btn.textContent = 'Just a moment…';
@@ -90,19 +84,14 @@ async function grantPermissions() {
   }
 }
 
-/* ── Listen to messages in Realtime DB ───────────────────── */
+/* ── Listen to messages ──────────────────────────────────── */
 function listenToMessages() {
-  const messagesRef = query(
-    ref(db, 'messages'),
-    orderByChild('timestamp'),
-  );
-
-  onValue(messagesRef, (snapshot) => {
+  onValue(ref(db, 'messages'), (snapshot) => {
     const messages = [];
     snapshot.forEach(child => {
-      messages.push({ id: child.key, ...child.val() });
+      messages.push({ key: child.key, text: child.val() });
     });
-    renderMessages(messages.reverse()); // newest first
+    renderMessages(messages.reverse());
   });
 }
 
@@ -127,38 +116,15 @@ function renderMessages(messages) {
     const card = document.createElement('div');
     card.className = 'message-card';
     card.style.animationDelay = `${index * 0.06}s`;
-
-    const date = msg.timestamp
-      ? formatDate(msg.timestamp)
-      : '';
-
     card.innerHTML = `
       <div class="message-lily">🌸</div>
       <p class="message-text">${escapeHtml(msg.text)}</p>
-      ${date ? `<span class="message-date">${date}</span>` : ''}
     `;
-
     list.appendChild(card);
   });
 }
 
 /* ── Helpers ─────────────────────────────────────────────── */
-function formatDate(timestamp) {
-  const date = new Date(timestamp);
-  const now  = new Date();
-  const diff = now - date;
-  const mins = Math.floor(diff / 60_000);
-  const hrs  = Math.floor(diff / 3_600_000);
-  const days = Math.floor(diff / 86_400_000);
-
-  if (mins < 1)   return 'Just now';
-  if (mins < 60)  return `${mins}m ago`;
-  if (hrs  < 24)  return `${hrs}h ago`;
-  if (days === 1) return 'Yesterday';
-  if (days <  7)  return date.toLocaleDateString('en-GB', { weekday: 'long' });
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
-}
-
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -186,7 +152,6 @@ function showToast(message) {
   }, 3500);
 }
 
-/* ── Wire up events ──────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-allow').addEventListener('click', grantPermissions);
   boot().catch(console.error);
