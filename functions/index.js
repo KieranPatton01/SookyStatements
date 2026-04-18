@@ -1,12 +1,11 @@
 // ============================================================
 //  SOOKY STATEMENTS — functions/index.js
-//  Deploy with: firebase deploy --only functions
 // ============================================================
 
-const { onValueCreated } = require('firebase-functions/v2/database');
-const { initializeApp }  = require('firebase-admin/app');
-const { getDatabase }    = require('firebase-admin/database');
-const { getMessaging }   = require('firebase-admin/messaging');
+const { onRequest }     = require('firebase-functions/v2/https');
+const { initializeApp } = require('firebase-admin/app');
+const { getDatabase }   = require('firebase-admin/database');
+const { getMessaging }  = require('firebase-admin/messaging');
 
 initializeApp();
 const rtdb      = getDatabase();
@@ -14,32 +13,34 @@ const messaging = getMessaging();
 
 const SOOKY_URL = 'https://kieranpatton01.github.io/SookyStatements';
 
-// ============================================================
-//  Trigger: new message added to Realtime Database
-// ============================================================
-exports.onNewMessage = onValueCreated(
-  { ref: 'messages/{messageId}',
-    region: 'europe-west1',
-    instance: 'sookystatements-default-rtdb' 
-  },
-  async (event) => {
-    const message = event.data.val();
-    if (!message?.text) return null;
+// HTTP function — called from the app when a message is added
+exports.sendMessage = onRequest(
+  { region: 'europe-west1', cors: true },
+  async (req, res) => {
+    if (req.method !== 'POST') {
+      res.status(405).send('Method not allowed');
+      return;
+    }
 
-    console.log('[Sooky] New message:', message.text.slice(0, 40));
+    const text = req.body?.text;
+    if (!text) {
+      res.status(400).send('Missing text');
+      return;
+    }
 
-    // Get her FCM token
+    console.log('[Sooky] Sending message:', text.slice(0, 40));
+
+    // Get FCM token
     const tokenSnap = await rtdb.ref('recipient/fcmToken').get();
     const fcmToken  = tokenSnap.val();
 
     if (!fcmToken) {
       console.warn('[Sooky] No FCM token found');
-      return null;
+      res.status(404).send('No recipient token');
+      return;
     }
 
-    const body = message.text.length > 80
-      ? message.text.slice(0, 77) + '…'
-      : message.text;
+    const body = text.length > 80 ? text.slice(0, 77) + '…' : text;
 
     const msg = {
       token: fcmToken,
@@ -70,16 +71,15 @@ exports.onNewMessage = onValueCreated(
 
     try {
       await messaging.send(msg);
-      console.log('[Sooky] Notification sent successfully');
+      console.log('[Sooky] Notification sent');
+      res.status(200).send('OK');
     } catch (e) {
       console.error('[Sooky] Send failed:', e.message);
       if (e.code === 'messaging/registration-token-not-registered' ||
           e.code === 'messaging/invalid-registration-token') {
         await rtdb.ref('recipient/fcmToken').remove();
-        console.log('[Sooky] Cleared invalid token');
       }
+      res.status(500).send(e.message);
     }
-
-    return null;
   }
 );

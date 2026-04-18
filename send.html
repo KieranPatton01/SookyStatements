@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Send a Message</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap');
+    body {
+      background: #faf5ef;
+      font-family: 'Cormorant Garamond', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    h1 { color: #6b2d4a; font-size: 1.8rem; margin-bottom: 24px; }
+    textarea {
+      width: 100%;
+      max-width: 400px;
+      height: 140px;
+      padding: 16px;
+      border: 1.5px solid #f2c4ce;
+      border-radius: 16px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: #3d1f2d;
+      background: #fff;
+      resize: none;
+      outline: none;
+    }
+    button {
+      margin-top: 16px;
+      padding: 14px 40px;
+      background: linear-gradient(135deg, #d4879a, #9b4d6a);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-style: italic;
+      cursor: pointer;
+    }
+    #status {
+      margin-top: 16px;
+      font-size: 1rem;
+      color: #9b4d6a;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌸 Send a Message</h1>
+  <textarea id="msg" placeholder="Write something lovely…"></textarea>
+  <button onclick="send()">Send 💌</button>
+  <p id="status"></p>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getDatabase, ref, push } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+    import { CONFIG } from './js/config.js';
+
+    const app = initializeApp(CONFIG.firebase);
+    const db  = getDatabase(app);
+
+    const FUNCTION_URL = 'https://europe-west1-sookystatements.cloudfunctions.net/sendMessage';
+
+    window.send = async function() {
+      const text = document.getElementById('msg').value.trim();
+      const status = document.getElementById('status');
+      if (!text) return;
+
+      status.textContent = 'Sending…';
+
+      // Save to DB
+      await push(ref(db, 'messages'), text);
+
+      // Trigger notification via Cloud Function
+      try {
+        const res = await fetch(FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        if (res.ok) {
+          status.textContent = 'Sent! 🌸';
+          document.getElementById('msg').value = '';
+        } else {
+          status.textContent = 'Message saved but notification failed';
+        }
+      } catch (e) {
+        status.textContent = 'Message saved but notification failed';
+        console.error(e);
+      }
+    };
+  </script>
+</body>
+</html>

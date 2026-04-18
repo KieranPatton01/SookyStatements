@@ -4,8 +4,8 @@
 
 import { CONFIG } from './config.js';
 
-import { initializeApp }     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, onValue, set }
+import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, push, set }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getMessaging, getToken, onMessage }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
@@ -13,6 +13,8 @@ import { getMessaging, getToken, onMessage }
 let db        = null;
 let messaging = null;
 let swReg     = null;
+
+const FUNCTION_URL = 'https://europe-west1-sookystatements.cloudfunctions.net/sendMessage';
 
 /* ── Boot ────────────────────────────────────────────────── */
 async function boot() {
